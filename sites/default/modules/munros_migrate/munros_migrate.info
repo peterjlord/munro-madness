@@ -1,0 +1,11 @@
+name = Munromadness Migrate
+description = Migration Scripts.
+package = Munromadness 
+core = 7.x
+
+; Information added by drupal.org packaging script on 2011-09-26
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "munros"
+datestamp = "1317038848"
+

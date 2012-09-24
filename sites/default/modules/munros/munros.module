@@ -1,0 +1,22 @@
+<?php
+define("LDQM", '&#8220;');
+define("RDQM", '&#8221;');
+define("MUNROS_COUNT", 283);
+define("TO_MILES", 0.621371192);
+define("TO_FEET", 3.2808399);
+define('MUNROS_PATH', drupal_get_path('module', 'munros'));
+
+
+function munros_menu() {
+  $items = array();
+  $items['home'] = array(
+    'page callback' => '_munros_homepage_empty',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+function _munros_homepage_empty() {
+  drupal_set_title("");
+  return '';
+}

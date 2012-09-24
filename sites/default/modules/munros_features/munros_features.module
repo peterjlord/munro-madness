@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Munros Features feature.
+ */
+
+include_once 'munros_features.features.inc';

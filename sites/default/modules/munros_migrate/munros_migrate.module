@@ -1,0 +1,119 @@
+<?php
+/*************** Some Functions Which Run with a Combination of Rules & VBO */
+function munros_migrate_update_video(&$node) {
+  $result = db_query("SELECT * FROM {content_type_embedded_video} WHERE nid = :nid", array(':nid' => $node->nid))->fetchAll();
+  $video_url = $result[0]->field_third_party_video_embed;
+  $video = array('video_url' => $video_url);
+  $node->field_video['und'] = array($video);
+  node_save($node);
+}
+function munros_migrate_update_profile_picture(&$user) {
+  $remote = Database::getConnection($target='default',$key='remote');
+  $result = $remote->query('SELECT * FROM {users} u WHERE u.uid = :uid', array(':uid' => $user->uid));
+
+  $path = '/' . variable_get('file_public_path', conf_path() . '/files/');
+  $path = DRUPAL_ROOT . '/' . variable_get('file_public_path', conf_path() . '/files');
+  foreach ($result as $record) {
+    $picture = ($record->picture);
+  }
+  $pic = str_replace('files', '', $picture);
+  $pic = ($path . $pic);
+  $size = filesize($pic);
+  $mime = mime_content_type($pic);
+  $filename = (basename($pic));
+  $uri = "public://pics/". $filename;
+  $user->picture->filename = $filename;
+  $user->picture->uri = $filename;
+  $user->picture->filemime = $mime;
+  $user->picture->filesize = $size;
+  db_set_active('default');
+  db_update('file_managed')
+      ->fields(array(
+        'uid' => $user->uid,
+        'filename' => $filename,
+        'uri' => $uri,
+        'filemime' => $mime,
+        'filesize' => $size,
+        'status' => 1,
+        'timestamp' => 0,
+      ))
+      ->condition('fid', $user->picture->fid)
+      ->execute();
+
+  //user_save($user);
+}
+function munros_update_node_profile2_entity(&$node) {
+  $account_id = (int)$node->uid;  // This is required
+
+  $profile_type = 'main';
+  $profile = profile2_load_by_user($account_id, $profile_type);
+  if (empty($profile)) {
+    $profile = profile_create(array('type' => $profile_type, 'uid' => $account_id));
+  }
+  $profile->field_firstname = $node->field_firstname;
+  $profile->field_initial = $node->field_initial;
+  $profile->field_surname = $node->field_surname;
+  $profile->field_birthdate = $node->field_birthdate;
+  $profile->field_about_me  = $node->field_about_me;
+  $profile->field_interests  = $node->field_interests;
+  $profile->field_status = $node->field_status;
+  $profile->field_orientation = $node->field_orientation;
+  $profile->field_gender = $node->field_gender;
+  $profile->field_education = $node->field_education;
+  $profile->field_children = $node->field_children;
+  $profile->field_occupation = $node->field_occupation;
+
+  // Save the profile.
+  profile2_save($profile);
+}
+
+
+function munros_migrate_menu() {
+	$items = array();
+	$items['admin/content/migrate'] = array(
+    'title' => 'Migrate',
+    'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
+    'description' => 'Migrate Stuff From Live Site to Drupal 7',
+    'page callback' => 'munros_migrate_dashboard',
+    'access callback' => TRUE,
+    'file' => 'munros_migrate.pages.inc',
+  );
+	$items['admin/content/migrate/1'] = array(
+    'title' => 'Choose a Batch',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('munros_migrate_batches'),
+    'access callback' => TRUE,
+    'description' => 'Tutorial 1: Simplest form',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'file' => 'munros_migrate.pages.inc',
+  );
+  $items['admin/content/migrate/2'] = array(
+    'title' => 'TEST Querys',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('munros_migrate_queries'),
+    'access callback' => TRUE,
+    'description' => 'Place to try Queries',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'munros_migrate.queries.inc',
+  );
+  $items['admin/content/migrate/3'] = array(
+    'title' => 'Migrate Flags',
+    'page callback' => 'munros_migrate_flag',
+    'page arguments' => array('munros_migrate_queries'),
+    'access callback' => TRUE,
+    'description' => 'Place to try Queries',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'munros_migrate.flag.inc',
+  );
+  $items['admin/content/migrate/4'] = array(
+    'title' => 'Migrate User Pictures',
+    'page callback' => 'munros_migrate_profile_pictures',
+    'page arguments' => array('munros_migrate_queries'),
+    'access callback' => TRUE,
+    'description' => 'Place to try Queries',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'munros_migrate.user_pics.inc',
+  );
+	return $items;
+}
+
